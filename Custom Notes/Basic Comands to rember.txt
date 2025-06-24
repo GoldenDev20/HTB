@@ -1,0 +1,927 @@
+Basic Comands to Rememeber for Hack the Box
+
+
+IP Address – Reference Sheet
+    ============================
+
+    What is an IP Address?
+    ----------------------
+    - An **IP (Internet Protocol) address** is a **unique identifier** assigned to each device on a network.
+    - Used to route data between devices across networks, whether local (LAN) or over the internet (WAN).
+    - Every device on a network must have a unique IP address to communicate properly.
+
+    Types of IP Addresses:
+    ----------------------
+    - **IPv4** (e.g., `192.168.1.1`) – Most commonly used; 32-bit numeric address
+    - **IPv6** (e.g., `2001:0db8::1`) – 128-bit alphanumeric address; used to handle the exhaustion of IPv4 space
+
+    Usage in Hacking / CTF Contexts:
+    -------------------------------
+    - The **IP address is the location** of the target machine you're attacking or investigating.
+    - It's the base identifier used in tools like `ping`, `nmap`, `ftp`, `gobuster`, etc.
+
+    Working With `/etc/hosts`:
+    --------------------------
+    - You can map an IP address to a human-readable hostname by editing your local hosts file:
+
+    Path:
+    - /etc/hosts
+
+    Example Entry:
+    - 10.10.10.10 target.htb
+
+    Benefits:
+    ---------
+    - Avoids the need to remember or repeatedly type the IP address
+    - Lets you use names like `target.htb` in browsers, terminal tools, or scripts
+    - Simulates domain name resolution without needing DNS
+
+    Editing `/etc/hosts` (Linux/macOS):
+    -----------------------------------
+    1. Open the file with a text editor:
+        sudo nano /etc/hosts
+    2. Add the line:
+        <target-ip> <custom-name>
+            Example:
+            - 10.10.10.10 bastion.htb
+    3. Save and exit. You can now use `bastion.htb` in your tools or browser.
+
+    Notes:
+    ------
+    - Changes only affect your local machine.
+    - You can use any valid name, but `.htb` is commonly used for Hack The Box boxes.
+
+    Use Cases on Hack The Box:
+    ---------------------------
+    - Set readable names for targets during multi-box scenarios
+    - Reduce command errors from retyping long IP addresses
+    - Simulate domain environments in challenges involving DNS, web apps, or Active Directory
+
+
+
+
+
+
+
+
+
+Ping – Reference Sheet
+    ======================
+
+    What is ping?
+    -------------
+    - **Ping** is a **network diagnostic utility** used to test the **reachability** of a host on an IP network.
+    - It works by sending **ICMP Echo Request** packets to a target IP address and waiting for **ICMP Echo Reply** responses.
+    - Helps determine:
+    - If a device is online
+    - The latency (response time)
+    - Packet loss (if any)
+
+    Basic Syntax:
+    -------------
+    - ping <target-ip>
+
+    Example:
+    - ping 10.10.10.10
+
+    Common Parameters:
+    ------------------
+    (Usage varies slightly between Linux/macOS and Windows)
+
+    Linux/macOS:
+    - `-c <count>`  
+    → Number of ping requests to send (e.g., `-c 4`)
+
+    - `-i <interval>`  
+    → Time between pings in seconds (default: 1 second)
+
+    - `-s <size>`  
+    → Size of the packet payload in bytes
+
+    - `-t <ttl>`  
+    → Set Time To Live (packet hop limit)
+
+    Windows:
+    - `-n <count>`  
+    → Number of echo requests to send
+
+    - `-l <size>`  
+    → Send buffer size (packet size)
+
+    - `-t`  
+    → Ping the target continuously until stopped
+
+    Example Usage:
+    --------------
+    - ping -c 4 10.10.10.10 # Linux/macOS – Send 4 pings
+    - ping -n 4 10.10.10.10 # Windows – Send 4 pings
+
+    Understanding Output:
+    ---------------------
+    - **Reply from <ip>**: Target is online
+    - **Request timed out**: No response (host down, ICMP blocked, or filtered)
+    - **Packet loss**: Indicates network issues
+    - **Time=<ms>**: Round-trip latency
+
+    Limitations:
+    ------------
+    - Many servers block or filter ICMP (ping) requests for security reasons.
+    - A host not responding to ping doesn't always mean it's offline.
+
+    Security Notes (HTB Context):
+    -----------------------------
+    - Useful as a first step to check if a machine is reachable.
+    - If a machine doesn't respond to ping, try scanning it anyway—some machines respond to TCP but not to ICMP.
+    - ICMP can be restricted by firewalls, but port scanning (e.g., with Nmap) may still reveal live hosts.
+
+    Use Cases on Hack The Box:
+    ---------------------------
+    - Verify if a target box is online and reachable
+    - Measure response time and packet stability
+    - Rule out basic connectivity issues before enumeration
+
+
+
+
+
+Nmap – Reference Sheet
+    ======================
+
+    What is Nmap?
+    -------------
+    - **Nmap (Network Mapper)** is a powerful open-source tool used for **network discovery**, **port scanning**, **service enumeration**, and **vulnerability detection**.
+    - Sends various types of requests to a target's ports to determine which are open, what services are running, and sometimes their versions and configurations.
+
+    Common Use Cases:
+    -----------------
+    - Identify open ports and services
+    - Detect operating systems and software versions
+    - Find misconfigurations or vulnerable services
+    - Perform stealth or aggressive scans during penetration tests
+
+    Basic Syntax:
+    -------------
+    nmap [options] <target>
+
+    Examples:
+    ---------
+    - nmap 10.10.10.10 → Basic scan
+    - nmap -sV 10.10.10.10 → Scan with service/version detection
+    - nmap -sC -sV -oN scan.txt 10.10.10.10 → Default scripts, version detection, output to file
+
+    Commonly Used Nmap Flags:
+    -------------------------
+    - `-p <ports>`  
+    → Scan specific ports (e.g., `-p 22,80,443`, or `-p-` for all 65535)
+
+    - `-sS`  
+    → SYN scan (stealth scan – fast and common)
+
+    - `-sT`  
+    → TCP connect scan (used when SYN scan isn't permitted)
+
+    - `-sV`  
+    → Service and version detection (identifies running services on open ports)
+
+    - `-sC`  
+    → Run default scripts (equivalent to `--script=default`)
+
+    - `-O`  
+    → OS detection
+
+    - `-A`  
+    → Aggressive scan (includes `-sC`, `-sV`, `-O`, and traceroute)
+
+    - `-Pn`  
+    → Skip host discovery (treat all hosts as online)
+
+    - `-T<0–5>`  
+    → Timing template (0 = slowest, 5 = fastest; use `-T4` for fast scans)
+
+    - `--script=<name>`  
+    → Use a specific NSE script (e.g., `--script=smb-enum-shares`)
+
+    - `-oN`, `-oX`, `-oG`  
+    → Output formats: Normal, XML, Grepable
+
+    - `-v` or `-vv`  
+    → Increase verbosity for more scan detail
+    
+    - '--min-rate=1000'
+    - this is used to specify the minimum number of packets that Nmap should send per second; it speeds up the scan the higher the number goes 
+
+
+
+
+
+    Important Nmap Scripts (HTB Context):
+    -------------------------------------
+    Used with `--script=<name>` or `-sC` (for default set):
+    - `smb-enum-shares`       → Enumerate SMB shares
+    - `ftp-anon`              → Check for anonymous FTP access
+    - `http-title`            → Get webpage title (quick web recon)
+    - `ssh-hostkey`           → Show SSH host keys
+    - `vuln`                  → Run vulnerability detection scripts
+
+    Example: Full Port Scan with Service Detection
+    ----------------------------------------------
+    - nmap -p- -sC -sV -T4 -oN full_scan.txt 10.10.10.10
+
+    Security Notes:
+    ---------------
+    - May trigger firewalls or intrusion detection systems (especially with `-A` or `-T5`)
+    - Always get permission before scanning networks not under your control
+
+    Use Cases on Hack The Box:
+    ---------------------------
+    - Identifying exposed services (FTP, SMB, HTTP, etc.)
+    - Determining service versions for potential vulnerabilities
+    - Running default or custom NSE scripts for enumeration
+    - Full TCP port discovery (to find non-standard services)
+
+
+
+
+
+
+FTP – Reference Sheet
+    =====================
+
+    What is FTP?
+    ------------
+    - **FTP (File Transfer Protocol)** is a **standard network protocol** used to transfer files between a client and server over a TCP/IP-based network.
+    - FTP operates on a **client-server model**, where the client initiates the connection to download or upload files.
+
+    Where FTP is Seen:
+    ------------------
+    - Default FTP port: **21 (TCP)**
+    - During scanning (e.g., with `nmap`), open port 21 indicates an FTP service is available.
+
+    Anonymous FTP Access:
+    ---------------------
+    - Some FTP servers allow **anonymous login** for public access.
+    Common credentials:
+    - **Username**: `anonymous`
+    - **Password**: `anno123` (or any email address)
+    - If anonymous login is allowed, users may be able to:
+    - Browse directories
+    - Download files
+    - Sometimes upload files (less common)
+
+    FTP Encryption Options:
+    -----------------------
+    - By default, FTP transmits **usernames, passwords, and files in plaintext**, making it insecure.
+    - Two common methods to secure FTP traffic:
+    1. **FTPS** – FTP over SSL/TLS (explicit or implicit encryption)
+    2. **SFTP** – FTP-like access over SSH (not actually FTP protocol)
+
+    FTP CLI Usage (Linux):
+    ----------------------
+    To connect:
+        ftp <target-ip>
+
+    Helpful FTP Commands:
+    ---------------------
+    - `ftp -?`  
+    → Shows a list of available commands
+
+    Once connected:
+    ---------------
+    - `ls` or `dir`      → List directory contents
+    - `cd <directory>`   → Change directory
+    - `get <filename>`   → Download a file
+    - `put <filename>`   → Upload a file
+    - `mget *`           → Download multiple files
+    - `bye` or `exit`    → Close the session
+
+    Example Session:
+    ----------------
+    - ftp <target-ip>
+    - Name: anonymous
+    - Password: anno123
+    - ftp> ls
+    - ftp> get secret.txt
+    - ftp> bye
+
+    Security Notes (HTB Context):
+    -----------------------------
+    - Plain FTP is often misconfigured and may expose sensitive files.
+    - If anonymous login is enabled, it may allow attackers to:
+    - Download public or sensitive data
+    - Upload malicious files (e.g., web shells in web directories)
+    - Passive and active FTP modes affect firewall behavior (can be relevant in restricted environments)
+
+    Use Cases on Hack The Box:
+    ---------------------------
+    - Gaining access to public files via anonymous login
+    - Downloading configuration files, credentials, or backups
+    - Uploading malicious files (when write permissions are allowed)
+    - Escalating privileges using stored credentials or misconfigured scripts found on FTP
+
+
+
+
+
+
+
+SMB – Reference Sheet
+    =====================
+
+    What is SMB?
+    ------------
+    - **SMB (Server Message Block)** is a **network communication protocol** that provides shared access to:
+    - Files
+    - Printers
+    - Serial ports
+    - Networked devices
+
+    - SMB is most commonly found on **Windows-based systems**.
+
+    Where SMB is Seen:
+    ------------------
+    - Commonly observed on **TCP port 445**, reserved for SMB over TCP.
+    - May also use **port 139** when running over NetBIOS (SMB over NetBIOS/NetBT).
+    - During scans (e.g., with `nmap`), open ports 445 and/or 139 usually indicate SMB services.
+
+    OSI Layer Info:
+    ---------------
+    - SMB operates at the **Application and Presentation layers** of the OSI model.
+    - Relies on lower-layer protocols (such as TCP/IP) for transport.
+    - Microsoft SMB often uses **NetBIOS over TCP/IP (NBT)** for communication on older systems.
+
+    Protocols Used:
+    ---------------
+    - **Port 445 (TCP)** → Direct SMB over TCP (modern usage)
+    - **Port 139 (TCP)** → SMB over NetBIOS (legacy support)
+    - Associated protocols:
+    - **NetBIOS Name Service (NBNS)** → Port 137
+    - **NetBIOS Datagram Service** → Port 138
+
+    Important SMB Versions:
+    -----------------------
+    - **SMBv1**: Legacy, insecure, vulnerable to exploits like **EternalBlue** (used in WannaCry, etc.)
+    - **SMBv2/v3**: Improved performance and security; supported on modern Windows systems.
+
+    Common Tools for SMB Enumeration:
+    ---------------------------------
+    - `smbclient` → Command-line SMB access tool (like FTP)
+    - `smbmap` → Lists shares and permissions
+    - `enum4linux` → Full enumeration suite (users, shares, OS info)
+    - `crackmapexec` → Automates credential checks, enumeration, and attacks
+    - `nmap` → With scripts like `smb-enum-shares`, `smb-os-discovery`, `smb-vuln*`
+
+    Example Nmap Scan:
+    ------------------
+    - nmap -p 445,139 --script smb-enum-shares,smb-enum-users <target-ip>
+
+    Security Notes (HTB Context):
+    -----------------------------
+    - SMBv1 is frequently left enabled on misconfigured or legacy systems → major attack surface.
+    - Anonymous access may allow:
+    - Listing of shared folders
+    - Reading files
+    - Dumping usernames
+    - Can be used to relay or capture NTLM hashes (e.g., via Responder or Inveigh).
+
+    Use Cases on Hack The Box:
+    ---------------------------
+    - Enumerating shared folders and permissions
+    - Accessing files without authentication
+    - Exploiting SMBv1 vulnerabilities (e.g., EternalBlue)
+    - Relaying credentials for privilege escalation or lateral movement
+
+
+Networking Basics – Reference Sheet
+    ===================================
+
+    What is Networking?
+    -------------------
+    - **Networking** refers to the practice of connecting computers, devices, and services to exchange data.
+    - Networks can be local (**LAN**) or wide (**WAN**, like the internet), and consist of hardware (e.g., routers, switches) and protocols that govern communication.
+
+    Key Concept: SMB Shares
+    ------------------------
+    - In a networked environment, **SMB (Server Message Block)** is commonly used for **file and resource sharing** between devices.
+    - A **SMB-enabled storage location** on a network is called a **share**.
+
+    How SMB Sharing Works:
+    ----------------------
+    - Any client on the network that knows the **IP address or hostname** of the SMB server and has **valid credentials** can attempt to connect to the share.
+    - Shares can include:
+    - Files and folders
+    - Printers
+    - Networked services
+
+    Authentication:
+    ---------------
+    - SMB requires authentication in the form of a **username and password** to access private or protected shares.
+    - Authentication is handled at the **application layer** of the OSI model.
+
+    Security Considerations:
+    ------------------------
+    - Properly configured SMB shares should:
+    - Require strong credentials
+    - Limit access to specific users or groups
+    - Log access attempts for auditing
+
+    Misconfigurations:
+    ------------------
+    - Network administrators may accidentally:
+    - Enable **guest** or **anonymous access**
+    - Leave shares **unprotected**
+    - Grant **read/write permissions** to everyone
+
+    These misconfigurations may allow:
+    - Unauthorized users to browse directories
+    - Downloading of sensitive files
+    - Uploading or replacing of files (in writable shares)
+
+    Example in CTF/HTB Context:
+    ---------------------------
+    - Port **445/tcp** is typically associated with SMB.
+    - A common attack flow includes:
+    1. Discover the open SMB port with `nmap`
+    2. Enumerate shares using tools like `smbclient` or `enum4linux`
+    3. Attempt access using:
+        - Guest or anonymous login
+        - Known or brute-forced credentials
+
+    Example Tools:
+    --------------
+    - `smbclient //10.10.10.10/share -U guest`  
+    → Access a share using guest credentials
+
+    - `smbmap -H 10.10.10.10`  
+    → Quickly check available shares and their permissions
+
+    - `enum4linux -a 10.10.10.10`  
+    → Enumerate usernames, shares, and policies
+
+    Use Cases on Hack The Box:
+    ---------------------------
+    - Identify misconfigured shares for data exfiltration
+    - Access backups, password files, scripts, or other sensitive resources
+    - Upload payloads to writable shares for code execution or pivoting
+
+
+Redis – Reference Sheet
+    =======================
+
+    What is Redis?
+    --------------
+    - Redis stands for **REmote DIctionary Server**.
+    - It is an open-source, in-memory, advanced **NoSQL key-value data store**.
+    - Frequently used for **caching**, **session management**, **real-time analytics**, and **message brokering**.
+    - Redis stores data as **key-value pairs** in memory, allowing extremely fast read/write access.
+
+    How Redis is Used:
+    ------------------
+    - Often used by web applications to cache frequently requested data.
+    Example: A website may cache prices on its homepage in Redis.
+    - On request, it checks Redis first → If key is not found → falls back to main database → then stores the result in Redis for future use.
+
+    Key Characteristics:
+    --------------------
+    - In-memory: Data is stored in RAM, not on disk (can persist optionally).
+    - Non-relational: Doesn't use tables, rows, or SQL.
+    - Data types supported: strings, hashes, lists, sets, sorted sets, bitmaps, streams, and more.
+
+    Redis CLI Usage:
+    ----------------
+    Use `redis-cli` to interact with a Redis server from the terminal.
+
+    Run `redis-cli --help` to see all command-line options.
+
+    Basic Redis CLI Commands:
+    -------------------------
+    - `info`  
+    → Displays server info and stats. Look under the **Keyspace** section for active databases and key counts.
+
+    - `select <db>`  
+    → Switch between databases. Default is `select 0` (DB 0). Redis supports DB 0 to DB 15 by default.
+
+    - `keys *`  
+    → Lists all keys in the current database. (Use with caution — slow on large datasets)
+
+    - `get <key>`  
+    → Retrieves the value of a key if it is a string.
+
+    - `set <key> <value>`  
+    → Sets a key to hold the specified value.
+
+    - `del <key>`  
+    → Deletes the key and its value.
+
+    - `flushdb`  
+    → Deletes all keys in the current database.
+
+    - `flushall`  
+    → Deletes all keys in all databases.
+
+    Security Notes (HTB Context):
+    -----------------------------
+    - Redis by default does **not use authentication**, making it exploitable if exposed on the network.
+    - If accessible unauthenticated, attackers can:
+    - Read/write arbitrary keys.
+    - Set up persistence to write a malicious file to disk (e.g., SSH key to authorized_keys).
+    - Often used in initial foothold scenarios during CTFs and HTB challenges.
+
+    Redis Auth:
+    -----------
+    - `AUTH <password>`  
+    → Used to authenticate when the Redis server is protected.
+
+    Example Session:
+    ----------------
+    - redis-cli
+    - info
+    - select 0
+    - keys *
+    - get <key>
+
+    Use Cases on Hack The Box:
+    ---------------------------
+    - Exploiting unauthenticated Redis access.
+    - Enumerating and dumping keys.
+    - Injecting payloads via stored keys.
+    - Abusing Redis persistence to gain shell access (e.g., writing to `.ssh/authorized_keys`).
+
+
+Gobuster – Reference Sheet
+    ==========================
+    What is Gobuster?
+    -----------------
+    Gobuster is a command-line brute-force tool used to discover hidden files/directories, DNS subdomains, and virtual hosts on web servers. It uses a wordlist to send HTTP requests and identifies valid paths based on HTTP responses.
+
+    How Gobuster Works:
+    -------------------
+    - Takes a wordlist of names (directories, files, subdomains, etc.)
+    - Appends each to the base URL or domain
+    - Sends requests and checks for valid HTTP responses (200, 301, 403, etc.)
+    - Outputs found directories, files, or hosts
+
+    Common Modes:
+    -------------
+    - dir    → Brute-force directories/files (most used in HTB)
+    - dns    → Brute-force subdomains
+    - vhost  → Virtual host discovery
+    - s3     → Amazon S3 bucket enumeration
+    - fuzz   → General fuzzing (advanced use)
+
+    Basic Syntax:
+    -------------
+    gobuster <mode> [options]
+
+    Example – Directory Bruteforce:
+    -------------------------------
+    gobuster dir -u http://10.10.10.10 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt
+
+    Flags:
+    ------
+    - dir          : Directory brute-force mode
+    - -u <URL>     : Target URL (e.g., http://IP)
+    - -w <wordlist>: Path to wordlist
+    - -x <ext>     : Try file extensions (comma-separated: php,html,txt)
+    - -t <threads> : Number of concurrent threads (default: 10)
+    - -o <file>    : Output results to a file
+    - -s <codes>   : Status codes to include (default: 200,204,301,302,307,401,403)
+    - --wildcard   : Ignore wildcard responses
+
+    Example – With File Extensions:
+    -------------------------------
+    gobuster dir -u http://10.10.10.10 -w /usr/share/wordlists/dirbuster/directory-list-2.3-medium.txt -x php,html,txt
+
+    Example – Subdomain Bruteforce:
+    -------------------------------
+    gobuster dns -d target.com -w /usr/share/wordlists/seclists/Discovery/DNS/subdomains-top1million-5000.txt
+
+    Flags for DNS mode:
+    --------------------
+    - dns          : Subdomain brute-force mode
+    - -d <domain>  : Target domain
+    - -w <wordlist>: Wordlist of subdomains
+
+    Use Cases on Hack The Box:
+    ---------------------------
+    - Finding hidden directories or admin panels
+    - Discovering developer/test folders
+    - Identifying configuration or backup files
+    - Subdomain enumeration for lateral movement
+
+
+
+
+# Services and What They Are / How to Handle Them
+=================================================
+
+When dealing with unfamiliar services:
+--------------------------------------
+- **Always perform a quick search** on the service name, its purpose, and known vulnerabilities.
+- Document key information such as:
+  - Default ports
+  - Authentication requirements
+  - Common misconfigurations
+  - Tools used to enumerate or exploit the service
+
+---
+
+## Common Network Services and Interaction Methods
+--------------------------------------------------
+
+### Telnet
+- Port: **23/tcp**
+- Use to access remote systems via a basic, **unencrypted terminal session**.
+- **Command:**
+- telnet <target_ip>
+- Often requires login credentials (username/password).
+- Insecure by design – data sent in plaintext.
+- Sometimes misconfigured to allow guest or default credentials.
+
+---
+
+### SSH (Secure Shell)
+- Port: **22/tcp**
+- Encrypted remote access to shell.
+- **Command:**
+- ssh <user>@<target_ip>
+- Can be brute-forced using tools like `hydra`, `medusa`, or `ncrack`.
+- Check for reused/default credentials.
+
+---
+
+### FTP (File Transfer Protocol)
+- Port: **21/tcp**
+- Used for file transfer, often with username/password auth.
+- Supports **anonymous login** on some systems.
+- **Basic Commands:**
+- ftp <target_ip>
+- user anonymous
+- password: anonymous@domain.com
+- get <file> # Download
+- put <file> # Upload
+- ls # List directory
+- exit # Quit
+- Use `nmap --script ftp-anon` or `ftpmap` to check permissions.
+
+---
+
+### HTTP / HTTPS (Web Services)
+- Ports: **80 (HTTP)**, **443 (HTTPS)**
+- Web interfaces often host vulnerable apps, admin panels, or uploads.
+- Use:
+- `curl`, `wget` – basic testing
+- `gobuster` or `ffuf` – directory/file brute-forcing
+- `nikto` or `nmap --script http-*` – enumeration
+- `whatweb` or `wappalyzer` – tech stack fingerprinting
+
+---
+
+### SMB (Server Message Block)
+- Ports: **445/tcp**, sometimes **139/tcp**
+- Used for file sharing on Windows networks.
+- **Tool: smbclient**
+- smbclient -L //<target_ip> # List shares
+- smbclient //<target_ip>/<share> # Connect to share
+- Useful Commands in smbclient:
+- `ls` – List files
+- `cd <dir>` – Change directory
+- `get <file>` – Download file
+- `put <file>` – Upload file
+- `exit` – Close session
+
+---
+
+### RDP (Remote Desktop Protocol)
+- Port: **3389/tcp**
+- Remote GUI access to Windows systems.
+- Use `rdesktop`, `xfreerdp`, or `remmina` to connect.
+- Example:
+- xfreerdp /u:<username> /p:<password> /v:<target_ip>
+
+---
+
+### MySQL / MariaDB
+- Port: **3306/tcp**
+- Database service.
+- Use `mysql -h <ip> -u <user> -p` to connect manually.
+- Use `nmap --script mysql-*` to enumerate.
+
+---
+
+### Redis
+- Port: **6379/tcp**
+- In-memory key-value store; often lacks authentication.
+- Use:
+- redis-cli -h <target_ip>
+- Use `keys *`, `get <key>`, `info` to explore.
+
+---
+
+## Additional Tools to Run During Pentesting
+--------------------------------------------
+
+### Enumeration & Recon
+- `nmap` – Port scanning and service enumeration
+- `enum4linux` – SMB and Windows enumeration
+- `nbtscan` – Scan NetBIOS names and services
+- `snmpwalk` – Interact with SNMP services
+
+### Password Attacks
+- `hydra` – Brute-force login credentials over many protocols
+- `medusa` – Parallel, fast brute-forcer
+- `ncrack` – Network authentication cracking (by nmap team)
+- `john` / `hashcat` – Offline password cracking
+
+### Web-Focused Tools
+- `gobuster` / `ffuf` – Directory/file brute-forcing
+- `nikto` – Vulnerability scanner for web servers
+- `wfuzz` – Web fuzzing for parameters, auth bypass
+- `sqlmap` – Automated SQL injection tool
+- `burpsuite` – Web app security testing proxy/interceptor
+- `wpscan` – WordPress vulnerability scanner
+
+### File & Code Transfer
+- `scp`, `rsync` – File transfer over SSH
+- `curl`, `wget` – Download from HTTP servers
+- `nc`, `python3 -m http.server` – Quick data transfer setup
+
+### Post-Exploitation / Access
+- `netcat` – Reverse shells, port listening
+- `msfconsole` – Metasploit Framework (exploit and payload platform)
+- `crackmapexec` – SMB/WinRM/LDAP enumeration and exploitation
+- `bloodhound` + `neo4j` – Active Directory attack path mapping
+
+---
+
+## Recommendations for Workflow
+-------------------------------
+1. **Identify open ports and services** with `nmap`.
+2. **Research unfamiliar services** and look for known misconfigurations.
+3. Use **appropriate tools** based on port/service.
+4. **Document commands**, findings, and potential entry points.
+5. Check for **default, weak, or missing authentication**.
+6. If you discover a web interface, **enumerate it heavily** (gobuster, wappalyzer, etc).
+7. Keep a **cheatsheet of service ports** and associated tools for rapid action.
+
+
+
+
+
+New Stuff unsorted
+
+ftp - rsync Cheat Sheet
+    - most of the time FTP is slow and we may only need to make a few minor changes to some documents at which point sending each file each time would be slow, 
+    - this is where rsyn comes in 
+     The main stages of rsync are as follows
+        1. rsync establishes a connection to the remote host and spawns another rsync receiver process
+        2. the sender and receiver processes compar what files have changed 
+        3.  what has changed gets updates on the remote host
+    - it often hapens that rsync is misconfigured to permit anoynymous loigin
+
+    - to connect to rsync is as follows
+        - the generic syntax used by rsync is the follwoing 
+            - rsync [option] ... [user@]Host::SRC [dest]
+                - Wher SRC is the file or directory or a list of multiple, 
+                = Dest is the file or directory to copy to 
+                - square brackets indicate option parameters
+                - option portion referes to the avalible options in rysnc. this list with all valid option can be found at the ofical manule under the option summary section 
+                - the user option paramenter is used when we want to acces the remote machine in a authentecated way
+
+        - the first thing that should be done is to list the files there 
+            - rsync --list-only {target_IP}::
+        - then in this case we can see public anoymouse share, it is common to call shared directory just shares
+            - to connect to it we do a similer command as follows 
+                - rsync --list-only {target_IP}::public
+            - to then donwload the file use the same command but remove --list-only 
+
+
+Databases
+- Databases are a collection of organized information that can be easily accessed managerd, and updates, 
+- databases are very important becasue they comunicate information related to sales transaction, product inventory, customer progiles and marketing activities.
+- It is crucial to be aware of the diffrent types of database and how we can connect to their remote servers and retries the desired data.
+There are diffrent types of databases 
+- MongoDB
+    - This is document oriented NoSQL Database, 
+    - in a dcument orientaed NoSQL Database, the data is organised into a hierachy of the following levels,
+        - databases
+        - collections
+        - documents
+    - Documents container literal data such as strings, numbers, dates, etc. in a JSON-like formats
+    - It is offten the case that the database server is misconfigured to permit anonymouse login which can be exploited
+    - Using the mongosh comman line utility 
+    
+
+    - To connect to MongoDB
+        - Ensure mongosh is installed 
+        - If need to install do so 
+        - Then go to the file where its locate ' cd mongosh-2.3.2-linux-x64/bin'
+         - use the comand 
+            - mongosh mongosb://{target_IP}:{Port running the server}
+        - Once connected you 
+            - List the Databases Present with the comand  
+                - show dbs
+            - Then use the comand 'use' Followed by the name of the Database in order to acces it 
+            - the use the comand 
+                - Show collections
+            -  to then dump the contentsion of the document that is there, use the following command 
+                - db.collection.find() "Replaced collection with the name of the colleciton
+                - use .pretty() in order to recive the output in a beautified formats
+
+
+
+
+
+SQl Injection 
+- SQL Injection against an SQL Database enabled web application, 
+- hypotheticially an admin of a website will search up users, their emails, billing, shipping and others, in contrast a simple user or unauthenticated vistor might only have acces to search the 
+products on sales.
+
+
+MySQL
+
+- use mysql --help to give better help on what needs to be run in order to connect to it 
+
+- use root, when needed to get in without a password- 
+- when inside the mysql use the follwoing commmands 
+     - SHOW databases; : Prints out the databases we can access
+     - USE {database_name}; : Set to use the database names {Database_name}
+     - SHOW tables; : Pints out the avilible tables inside the current database
+     - SELECT * FROM {table_nmae}; : Printis out all the data from the table {table_name}
+
+     
+
+## Windows 
+    - Windows Remote management (WinRM)
+        - is a windows native built in remote management protocol that uses simple object protocol to interact with remote computers and servers, 
+        aswell as operating systems and applications
+        - WinRM allows the user to;
+            - Remotely Comuncate and interface with hosts
+            - Execute commands remotely on systems that are not local to you but are network accessible
+            - Monitor, manager, and configure server, operating systems and client machines from a remote location 
+    
+    - Webiste Enumeration 
+        - Name based virtual hosting is a method for hosting multiple domain names (With Seperate handling of each name) on a single server, this allows one server to share its resources, such as memory and 
+        processor cycles, without requirng all the services to be used by the same hostname 
+            - the web server checks the domain name provicded in the host header field of the HTTP request and sends a respones according to that
+        
+        - The /etc/hosts file; is used to resolve a hostname into an IP address & thus we will need to add an entry in the 
+            /etc/hosts file for this domian to enable the beowser to resolve the adress (ie this can be done with the fillowing command
+                - echo "Machine_ip     name of the redirect(unresloved)" | sudo tee -a /etc/hosts)
+            
+    - File inclusion Vulnerability 
+        - Dynamic websites include HTML pages on the fly using infromation from the HTTP request to include Get and Post parameters, Cookiees and other varibales
+            it is commone for a page to "include" another page based on some of these parametesrs
+        - LFI or Local File Inclusion occurs when an attacker is able to get a website to include a file that was not
+            intended to be an option for this application. A common example is when an application uses the path to a
+            file as input. If the application treats this input as trusted, and the required sanitary checks are not
+            performed on this input, then the attacker can exploit it by using the ../ string in the inputted file name
+            and eventually view sensitive files in the local file system. In some limited cases, an LFI can lead to code
+            execution as well.
+        - RFI or Remote File Inclusion is similar to LFI but in this case it is possible for an attacker to load a remote
+            file on the host using protocols like HTTP, FTP etc
+
+            - A common one to use would be this 
+                = ../../../../../../../../windows/system32/drivers/etc/hosts
+                - use this at the end of a thing like page = 
+
+    - New Technology Lan manager (NTLM)
+        - is a collection fo authentiaction procols created by Microsoft. It is a challenge-Response authentication procol used to authentcate a client to a resources on a 
+        active directory domian 
+        
+        - it is a type of a singler sign on because it allows the user to provide the udnerlying authentication facotr only once and login 
+
+        The NTLM authentication process is done in the following way;
+            - The client sends the user name and domain name to the server
+            - The server generates a random character string, refered to as the challengs 
+            - The client encryption the challenge with teh NTLM hash of the user password and sends it back to the server 
+            - the server retrieves the user password 
+            - the server uses the hash calue retrieved from the security account database to encyrpt the chllenge string, this vales is the compared to the value
+            recived from the client, if the values match the client is authenticated 
+
+        NTLM vs NTHash vs NetNTMLv2
+            - the terminoloy around NTLM authentication is messy, and even pros misue ut from time to time, Bellow is some key terms defined;
+                - A hass function is a one-way function that akes any amount of data and returns a fixed size value. 
+                    typically, the result is refered to as a hash, digest, or fingerprint. They are used for storing passwords
+                    more securely, as there's no way to conver the has directly back to the original data (Thouse thre are are
+                    attacks to attempt to recover passwords from hashes), so a server can store a hasg of you password, and when you submit you password to 
+                    the site, it hashes you input, and compares the result to the hase in the database, and if they match, it knows you supplied the coorect password
+                - An NTHash is the output of the algorithm used to store passwords on Windows systems in the SAM database, 
+                    and on  domain controllers, An NTHash is often refered to as an NTLM hash or even just an NTLM which can be misleading and confusign 
+                - When teh NTLM  protocol wants to do authenicateion over the network, it uses a challend / response model as described above, A NetNTLMv2 challenge / response is a 
+                    string specifically formatted to include the challenge and response. this is often refered to as a NetNTLMv2 has, but 
+                    its not acctually a hash, still, it is regulary referred to as a hase because we attackin it in the same manner
+
+                 will need to contine to gather notes from responder 
+
+                 - evil-winrm 
+
+
+
+- Cloud infrastrcutre
+s3 bucker
+aws configure
+
+
+
+
+--- Netowrking 
